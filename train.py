@@ -16,9 +16,10 @@ PATIENCE_FACTOR = 0.1
 MODEL_BASE_PATH = "training"
 HIDDEN_LAYERS = 2
 NUM_RNN_LAYERS = 1
+FEATURE_LENGTH = 100
 MODEL = "GRU"
 BASE_DIR = "data"
-MODEL_SAVE_PATH = os.path.join(MODEL_BASE_PATH, f"{MODEL}_{HIDDEN_LAYERS}_{NUM_RNN_LAYERS}")
+MODEL_SAVE_PATH = os.path.join(MODEL_BASE_PATH, f"{MODEL}_{HIDDEN_LAYERS}_{NUM_RNN_LAYERS}_{FEATURE_LENGTH}")
 
 if not os.path.exists(MODEL_BASE_PATH):
     os.mkdir(MODEL_BASE_PATH)
@@ -44,14 +45,14 @@ for file in os.listdir(os.path.join(BASE_DIR, "training")):
     df = create_dataset(os.path.join(BASE_DIR, file), True)
     dfs.append(df)
 
-train_dataset = SequenceDataset(dfs, mode="train")
+train_dataset = SequenceDataset(dfs, mode="train", length=FEATURE_LENGTH)
 
 dfs_val = []
 for file in os.listdir(os.path.join(BASE_DIR, "val")):
     df = create_dataset(os.path.join(BASE_DIR, file), True)
     dfs_val.append(df)
 
-val_dataset = SequenceDataset(dfs_val, mode="val")
+val_dataset = SequenceDataset(dfs_val, mode="val", length=FEATURE_LENGTH)
 
 train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
 val_loader = DataLoader(val_dataset, batch_size=4, shuffle=True)

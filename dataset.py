@@ -17,7 +17,7 @@ SENSOR_NEW_MAX = 1
 MM_FILE_NAME = "scaler.gz"
 
 class SequenceDataset(Dataset):
-    def __init__(self, dataframes, mode="train"):
+    def __init__(self, dataframes, mode="train", length=100):
         dd = pd.concat(dataframes)
         dd.replace(-999, 0, inplace=True)
         if mode == "train":
@@ -34,7 +34,7 @@ class SequenceDataset(Dataset):
         for df in dataframes:
             df[SENSORS] = MM.transform(df[SENSORS])
             X, y = df.drop(columns=['Exposure']).to_numpy(), df.Exposure.values
-            X_ss, y_mm = split_sequences(X, y, 100)
+            X_ss, y_mm = split_sequences(X, y, length)
             self.train_x.extend(X_ss)
             self.train_y.extend(y_mm)
 
