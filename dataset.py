@@ -1,5 +1,5 @@
 import torch
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DataLoader
 import pandas as pd
 pd.options.display.max_columns = None
 import numpy as np
@@ -226,5 +226,6 @@ if __name__ == '__main__':
         dfs.append(df)
 
     train_dataset = SequenceDataset(dfs)
-
-    # train_loader = DataLoader(train_dataset, batch_size=1, shuffle=True)
+    train_loader = DataLoader(train_dataset, batch_size=1, shuffle=True)
+    inp, out = next(iter(train_loader))
+    print(inp.shape, out.shape)
