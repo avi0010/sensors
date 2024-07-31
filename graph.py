@@ -46,7 +46,7 @@ class StockBlockLayer(nn.Module):
     def spe_seq_cell(self, input):
         batch_size, k, input_channel, node_cnt, time_step = input.size()
         input = input.view(batch_size, -1, node_cnt, time_step)
-        ffted = torch.fft.rfft(input, 1)
+        ffted = ffted = torch.view_as_real(torch.fft.fft(input, dim=1))
         real = ffted[..., 0].permute(0, 2, 1, 3).contiguous().reshape(batch_size, node_cnt, -1)
         img = ffted[..., 1].permute(0, 2, 1, 3).contiguous().reshape(batch_size, node_cnt, -1)
         for i in range(3):
@@ -55,7 +55,7 @@ class StockBlockLayer(nn.Module):
         real = real.reshape(batch_size, node_cnt, 4, -1).permute(0, 2, 1, 3).contiguous()
         img = img.reshape(batch_size, node_cnt, 4, -1).permute(0, 2, 1, 3).contiguous()
         time_step_as_inner = torch.cat([real.unsqueeze(-1), img.unsqueeze(-1)], dim=-1)
-        iffted = torch.fft.irfft(time_step_as_inner, 1)
+        iffted = torch.fft.irfft(torch.view_as_complex(time_step_as_inner), n=time_step_as_inner.shape[1], dim=1)
         return iffted
 
     def forward(self, x, mul_L):
@@ -95,7 +95,7 @@ class Model(nn.Module):
         self.stock_block.extend(
             [StockBlockLayer(self.time_step, self.unit, self.multi_layer, stack_cnt=i) for i in range(self.stack_cnt)])
         self.fc = nn.Sequential(
-            nn.Linear(int(self.time_step), int(self.time_step)),
+            nn.Linear(int(self.time_step * units), int(self.time_step)),
             nn.LeakyReLU(),
             nn.Linear(int(self.time_step), self.horizon),
         )
@@ -172,14 +172,13 @@ class Model(nn.Module):
             forecast, X = self.stock_block[stack_i](X, mul_L)
             result.append(forecast)
         forecast = result[0] + result[1]
+        forecast = forecast.flatten(1)
         forecast = self.fc(forecast)
-        if forecast.size()[-1] == 1:
-            return forecast.unsqueeze(1).squeeze(-1), attention
-        else:
-            return forecast.permute(0, 2, 1).contiguous(), attention
+        return forecast[0], attention
 
 if __name__ == '__main__':
-    model = Model(26, 1, 100, 5)
+    model = Model(26, 2, 100, 1)
     input = torch.randn(1, 100, 26)
     with torch.no_grad():
-        output = model(input)
+        forcast, _ = model(input)
+        print(forcast)
