@@ -6,6 +6,7 @@ from torch.utils.data import DataLoader
 from simple_lstm import ShallowRegressionGRU, ShallowRegressionLSTM
 from lstm_fcn import MLSTMfcn
 from dataset import SequenceDataset, create_dataset
+from tqdm import tqdm
 
 LEARNING_RATE = 0.01
 LEN_FEATURES = 26
@@ -41,15 +42,15 @@ optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=PATIENCE, factor=PATIENCE_FACTOR)
 
 dfs = []
-for file in os.listdir(os.path.join(BASE_DIR, "training")):
-    df = create_dataset(os.path.join(BASE_DIR, file), True)
+for file in tqdm(os.listdir(os.path.join(BASE_DIR, "train"))):
+    df = create_dataset(os.path.join(BASE_DIR, "train", file), True)
     dfs.append(df)
 
 train_dataset = SequenceDataset(dfs, mode="train", length=FEATURE_LENGTH)
 
 dfs_val = []
-for file in os.listdir(os.path.join(BASE_DIR, "val")):
-    df = create_dataset(os.path.join(BASE_DIR, file), True)
+for file in tqdm(os.listdir(os.path.join(BASE_DIR, "val"))):
+    df = create_dataset(os.path.join(BASE_DIR, "val", file), True)
     dfs_val.append(df)
 
 val_dataset = SequenceDataset(dfs_val, mode="val", length=FEATURE_LENGTH)
