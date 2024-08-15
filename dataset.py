@@ -34,7 +34,7 @@ class SequenceDataset(Dataset):
 
         for df in dataframes:
             df.replace(-999, 0, inplace=True)
-            # df[SENSORS] = MM.transform(df[SENSORS])
+            df[SENSORS] = MM.transform(df[SENSORS])
             # fig = px.line(df, template="plotly_dark")
             # fig.show()
             X, y = df.drop(columns=['Exposure']).to_numpy(), df.Exposure.values
