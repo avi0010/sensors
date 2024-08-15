@@ -3,9 +3,10 @@ from torch.utils.data import Dataset, DataLoader
 import pandas as pd
 pd.options.display.max_columns = None
 import numpy as np
+# import plotly.express as px
 import os
 import joblib
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
 
 torch.manual_seed(42)
 SENSORS = ["S0", "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10", "S11", "S12", "S13", "S14", "S15", "S16", "S17", "S18", "S19", "S20", "S21", "S22", "S23", "Temperature", "Humidity", ]
@@ -13,15 +14,15 @@ SENSOR_MIN = 0
 SENSOR_MAX = 2
 SENSOR_NEW_MIN = 0
 SENSOR_NEW_MAX = 1
-
-MM_FILE_NAME = "scaler.gz"
+PARAMETER = "Raw"
+MM_FILE_NAME = f"scaler_{PARAMETER}.gz"
 
 class SequenceDataset(Dataset):
     def __init__(self, dataframes, mode="train", length=100):
         dd = pd.concat(dataframes)
         dd.replace(-999, 0, inplace=True)
         if mode == "train":
-            MM = MinMaxScaler()
+            MM = StandardScaler()
             MM.fit(dd[SENSORS])
             joblib.dump(MM, MM_FILE_NAME)
         elif mode == "val" or mode == "test":
@@ -32,7 +33,10 @@ class SequenceDataset(Dataset):
         self.train_x, self.train_y = [], []
 
         for df in dataframes:
-            df[SENSORS] = MM.transform(df[SENSORS])
+            df.replace(-999, 0, inplace=True)
+            # df[SENSORS] = MM.transform(df[SENSORS])
+            # fig = px.line(df, template="plotly_dark")
+            # fig.show()
             X, y = df.drop(columns=['Exposure']).to_numpy(), df.Exposure.values
             X_ss, y_mm = split_sequences(X, y, length)
             self.train_x.extend(X_ss)
@@ -63,151 +67,151 @@ def split_sequences(input_sequences, output_sequence, n_steps_in):
 
     return X, y
 
-def create_dataset(filename, if_split=True):
+def create_dataset(filename, data_type:str):
     S0_db = pd.read_excel(filename, sheet_name="S0")
     S0_db = S0_db.infer_objects()
     S0_filtered = S0_db[S0_db["Routine Counter"] >= 1]
     df = S0_filtered[["Exposure", "Temperature", "Humidity"]]
 
-    S0 = S0_filtered["Raw"]
+    S0 = S0_filtered[data_type]
     df = df.assign(S0=S0)
 
     S1_db = pd.read_excel(filename, sheet_name="S1")
     S1_db = S1_db.infer_objects()
     S1_filtered = S1_db[S1_db["Routine Counter"] >= 1]
-    S1 = S1_filtered["Raw"]
+    S1 = S1_filtered[data_type]
     df = df.assign(S1=S1)
 
     S2_db = pd.read_excel(filename, sheet_name="S2")
     S2_db = S2_db.infer_objects()
     S2_filtered = S2_db[S2_db["Routine Counter"] >= 1]
-    S2 = S2_filtered["Raw"]
+    S2 = S2_filtered[data_type]
     df = df.assign(S2=S2)
 
     S3_db = pd.read_excel(filename, sheet_name="S3")
     S3_db = S3_db.infer_objects()
     S3_filtered = S3_db[S3_db["Routine Counter"] >= 1]
-    S3 = S3_filtered["Raw"]
+    S3 = S3_filtered[data_type]
     df = df.assign(S3=S3)
 
     S4_db = pd.read_excel(filename, sheet_name="S4")
     S4_db = S4_db.infer_objects()
     S4_filtered = S4_db[S4_db["Routine Counter"] >= 1]
-    S4 = S4_filtered["Raw"]
+    S4 = S4_filtered[data_type]
     df = df.assign(S4=S4)
 
     S5_db = pd.read_excel(filename, sheet_name="S5")
     S5_db = S5_db.infer_objects()
     S5_filtered = S5_db[S5_db["Routine Counter"] >= 1]
-    S5 = S5_filtered["Raw"]
+    S5 = S5_filtered[data_type]
     df = df.assign(S5=S5)
 
     S6_db = pd.read_excel(filename, sheet_name="S6")
     S6_db = S6_db.infer_objects()
     S6_filtered = S6_db[S6_db["Routine Counter"] >= 1]
-    S6 = S6_filtered["Raw"]
+    S6 = S6_filtered[data_type]
     df = df.assign(S6=S6)
 
     S7_db = pd.read_excel(filename, sheet_name="S7")
     S7_db = S7_db.infer_objects()
     S7_filtered = S7_db[S7_db["Routine Counter"] >= 1]
-    S7 = S7_filtered["Raw"]
+    S7 = S7_filtered[data_type]
     df = df.assign(S7=S7)
 
     S8_db = pd.read_excel(filename, sheet_name="S8")
     S8_db = S8_db.infer_objects()
     S8_filtered = S8_db[S8_db["Routine Counter"] >= 1]
-    S8 = S8_filtered["Raw"]
+    S8 = S8_filtered[data_type]
     df = df.assign(S8=S8)
 
     S9_db = pd.read_excel(filename, sheet_name="S9")
     S9_db = S9_db.infer_objects()
     S9_filtered = S9_db[S9_db["Routine Counter"] >= 1]
-    S9 = S9_filtered["Raw"]
+    S9 = S9_filtered[data_type]
     df = df.assign(S9=S9)
 
     S10_db = pd.read_excel(filename, sheet_name="S10")
     S10_db = S10_db.infer_objects()
     S10_filtered = S10_db[S10_db["Routine Counter"] >= 1]
-    S10 = S10_filtered["Raw"]
+    S10 = S10_filtered[data_type]
     df = df.assign(S10=S10)
 
     S11_db = pd.read_excel(filename, sheet_name="S11")
     S11_db = S11_db.infer_objects()
     S11_filtered = S11_db[S11_db["Routine Counter"] >= 1]
-    S11 = S11_filtered["Raw"]
+    S11 = S11_filtered[data_type]
     df = df.assign(S11=S11)
 
     S12_db = pd.read_excel(filename, sheet_name="S12")
     S12_db = S12_db.infer_objects()
     S12_filtered = S12_db[S12_db["Routine Counter"] >= 1]
-    S12 = S12_filtered["Raw"]
+    S12 = S12_filtered[data_type]
     df = df.assign(S12=S12)
 
     S13_db = pd.read_excel(filename, sheet_name="S13")
     S13_db = S13_db.infer_objects()
     S13_filtered = S13_db[S13_db["Routine Counter"] >= 1]
-    S13 = S13_filtered["Raw"]
+    S13 = S13_filtered[data_type]
     df = df.assign(S13=S13)
 
     S14_db = pd.read_excel(filename, sheet_name="S14")
     S14_db = S14_db.infer_objects()
     S14_filtered = S14_db[S14_db["Routine Counter"] >= 1]
-    S14 = S14_filtered["Raw"]
+    S14 = S14_filtered[data_type]
     df = df.assign(S14=S14)
 
     S15_db = pd.read_excel(filename, sheet_name="S15")
     S15_db = S15_db.infer_objects()
     S15_filtered = S15_db[S15_db["Routine Counter"] >= 1]
-    S15 = S15_filtered["Raw"]
+    S15 = S15_filtered[data_type]
     df = df.assign(S15=S15)
 
     S16_db = pd.read_excel(filename, sheet_name="S16")
     S16_db = S16_db.infer_objects()
     S16_filtered = S16_db[S16_db["Routine Counter"] >= 1]
-    S16 = S16_filtered["Raw"]
+    S16 = S16_filtered[data_type]
     df = df.assign(S16=S16)
 
     S17_db = pd.read_excel(filename, sheet_name="S17")
     S17_db = S17_db.infer_objects()
     S17_filtered = S17_db[S17_db["Routine Counter"] >= 1]
-    S17 = S17_filtered["Raw"]
+    S17 = S17_filtered[data_type]
     df = df.assign(S17=S17)
 
     S18_db = pd.read_excel(filename, sheet_name="S18")
     S18_db = S18_db.infer_objects()
     S18_filtered = S18_db[S18_db["Routine Counter"] >= 1]
-    S18 = S18_filtered["Raw"]
+    S18 = S18_filtered[data_type]
     df = df.assign(S18=S18)
 
     S19_db = pd.read_excel(filename, sheet_name="S19")
     S19_db = S19_db.infer_objects()
     S19_filtered = S19_db[S19_db["Routine Counter"] >= 1]
-    S19 = S19_filtered["Raw"]
+    S19 = S19_filtered[data_type]
     df = df.assign(S19=S19)
 
     S20_db = pd.read_excel(filename, sheet_name="S20")
     S20_db = S20_db.infer_objects()
     S20_filtered = S20_db[S20_db["Routine Counter"] >= 1]
-    S20 = S20_filtered["Raw"]
+    S20 = S20_filtered[data_type]
     df = df.assign(S20=S20)
 
     S21_db = pd.read_excel(filename, sheet_name="S21")
     S21_db = S21_db.infer_objects()
     S21_filtered = S21_db[S21_db["Routine Counter"] >= 1]
-    S21 = S21_filtered["Raw"]
+    S21 = S21_filtered[data_type]
     df = df.assign(S21=S21)
 
     S22_db = pd.read_excel(filename, sheet_name="S22")
     S22_db = S22_db.infer_objects()
     S22_filtered = S22_db[S22_db["Routine Counter"] >= 1]
-    S22 = S22_filtered["Raw"]
+    S22 = S22_filtered[data_type]
     df = df.assign(S22=S22)
 
     S23_db = pd.read_excel(filename, sheet_name="S23")
     S23_db = S23_db.infer_objects()
     S23_filtered = S23_db[S23_db["Routine Counter"] >= 1]
-    S23 = S23_filtered["Raw"]
+    S23 = S23_filtered[data_type]
     df = df.assign(S23=S23)
 
     # df.replace(-999, 0, inplace=True)

@@ -46,7 +46,7 @@ class StockBlockLayer(nn.Module):
     def spe_seq_cell(self, input):
         batch_size, k, input_channel, node_cnt, time_step = input.size()
         input = input.view(batch_size, -1, node_cnt, time_step)
-        ffted = ffted = torch.view_as_real(torch.fft.fft(input, dim=1))
+        ffted  = torch.view_as_real(torch.fft.rfft(input, dim=1))
         real = ffted[..., 0].permute(0, 2, 1, 3).contiguous().reshape(batch_size, node_cnt, -1)
         img = ffted[..., 1].permute(0, 2, 1, 3).contiguous().reshape(batch_size, node_cnt, -1)
         for i in range(3):

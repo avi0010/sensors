@@ -5,8 +5,9 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from simple_lstm import ShallowRegressionGRU, ShallowRegressionLSTM
 from lstm_fcn import MLSTMfcn
-from dataset import SequenceDataset, create_dataset
+from dataset import SequenceDataset, create_dataset, PARAMETER
 from tqdm import tqdm
+import json
 
 LEARNING_RATE = 0.01
 LEN_FEATURES = 26
@@ -28,6 +29,22 @@ if not os.path.exists(MODEL_BASE_PATH):
 if not os.path.exists(MODEL_SAVE_PATH):
     os.mkdir(MODEL_SAVE_PATH)
 
+
+with open (os.path.join(MODEL_SAVE_PATH, "parameters.json"), 'w') as f:
+   data = {
+       "LEARNING_RATE": LEARNING_RATE,
+       "PARAMETER" :PARAMETER ,
+       "FEATURE_LENGTH" :FEATURE_LENGTH ,
+       "LEN_FEATURES" :LEN_FEATURES ,
+       "MODEL" :MODEL ,
+       "NUM_RNN_LAYERS" :NUM_RNN_LAYERS ,
+       "PATIENCE_FACTOR" :PATIENCE_FACTOR ,
+       "PATIENCE" :PATIENCE ,
+       "THRESHOLD" :THRESHOLD ,
+       "EPOCHS" :EPOCHS ,
+   }
+   json.dump(data, f, indent=4)
+
 if MODEL == "GRU":
     model = ShallowRegressionGRU(LEN_FEATURES, HIDDEN_LAYERS, NUM_RNN_LAYERS)
 elif MODEL == "LSTM":
@@ -43,14 +60,14 @@ scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=PATIE
 
 dfs = []
 for file in tqdm(os.listdir(os.path.join(BASE_DIR, "train"))):
-    df = create_dataset(os.path.join(BASE_DIR, "train", file), True)
+    df = create_dataset(os.path.join(BASE_DIR, "train", file), PARAMETER)
     dfs.append(df)
 
 train_dataset = SequenceDataset(dfs, mode="train", length=FEATURE_LENGTH)
 
 dfs_val = []
 for file in tqdm(os.listdir(os.path.join(BASE_DIR, "val"))):
-    df = create_dataset(os.path.join(BASE_DIR, "val", file), True)
+    df = create_dataset(os.path.join(BASE_DIR, "val", file), PARAMETER)
     dfs_val.append(df)
 
 val_dataset = SequenceDataset(dfs_val, mode="val", length=FEATURE_LENGTH)
