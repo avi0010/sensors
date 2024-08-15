@@ -54,7 +54,7 @@ elif MODEL == "FCN_LSTM":
 else:
     raise ValueError(f"{MODEL} not implemented")
 
-loss_function = nn.MSELoss()
+loss_function = nn.BCEWithLogitsLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=PATIENCE, factor=PATIENCE_FACTOR)
 
