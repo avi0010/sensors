@@ -79,12 +79,12 @@ v_loss, t_loss = [], []
 v_accuracy     = []
 best_vloss = 10000000
 
-for epoch in range(EPOCHS):
+for epoch in tqdm(range(EPOCHS)):
     running_loss = 0.
 
     model.train()
 
-    for i, data in enumerate(train_loader):
+    for i, data in tqdm(enumerate(train_loader)):
         # Every data instance is an input + label pair
         inputs, labels = data
 
