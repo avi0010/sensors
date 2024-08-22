@@ -7,6 +7,7 @@ from simple_lstm import ShallowRegressionGRU, ShallowRegressionLSTM
 from lstm_fcn import MLSTMfcn
 from dataset import SequenceDataset, create_dataset, PARAMETER
 from tqdm import tqdm
+from sklearn.metrics import precision_recall_fscore_support
 import json
 
 LEARNING_RATE = 0.01
@@ -109,6 +110,7 @@ for epoch in tqdm(range(EPOCHS)):
 
     correct, total = 0, 0
     running_v_loss = 0.0
+    true_labels, preds = [], []
     for i, data in enumerate(val_loader):
         with torch.no_grad():
             inputs, labels = data
@@ -119,9 +121,15 @@ for epoch in tqdm(range(EPOCHS)):
             outputs.sigmoid_()
             outputs[outputs < THRESHOLD] = 0.0
             outputs[outputs > THRESHOLD] = 1.0
+            true_labels.extend(labels.tolist())
+            preds.extend(outputs.tolist())
             total += labels.size(0)
             correct += (outputs == labels).sum().item()
 
+    precision, recall, f1, _ = precision_recall_fscore_support(true_labels, preds)
+    v_precision.extend(precision.tolist())
+    v_recall.extend(recall.tolist())
+    v_f1.extend(f1.tolist())
     avg_vloss = running_v_loss / len(val_loader)
     if avg_vloss < best_vloss:
         best_vloss = avg_vloss
@@ -133,7 +141,7 @@ for epoch in tqdm(range(EPOCHS)):
 
 xs = [x for x in range(EPOCHS)]
 
-f, ax = plt.subplots(1, 2, figsize=(12, 4))
+f, ax = plt.subplots(1, 3, figsize=(15, 5))
 
 ax[0].plot(xs, t_loss, label="t_loss")
 ax[0].plot(xs, v_loss, "-.", label="v_loss")
@@ -148,4 +156,11 @@ ax[1].set_ylabel("acc")
 ax[1].legend()
 ax[1].set_title("Model acc")
 
+ax[2].plot(xs, v_precision, label="precision")
+ax[2].plot(xs, v_recall, label="recall")
+ax[2].plot(xs, v_f1, label="f1")
+ax[2].set_xlabel("epoch")
+ax[2].set_ylabel("stats")
+ax[2].legend()
+ax[2].set_title("Model stats")
 f.savefig(os.path.join(MODEL_SAVE_PATH, "fig.png"))
