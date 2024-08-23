@@ -10,7 +10,9 @@ from tqdm import tqdm
 from sklearn.metrics import precision_recall_fscore_support
 import json
 
-LEARNING_RATE = 0.01
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+
+LEARNING_RATE = 0.001
 LEN_FEATURES = 26
 EPOCHS = 5
 THRESHOLD = 0.5
@@ -47,37 +49,38 @@ with open (os.path.join(MODEL_SAVE_PATH, "parameters.json"), 'w') as f:
    json.dump(data, f, indent=4)
 
 if MODEL == "GRU":
-    model = ShallowRegressionGRU(LEN_FEATURES, HIDDEN_LAYERS, NUM_RNN_LAYERS)
+    model = ShallowRegressionGRU(LEN_FEATURES, HIDDEN_LAYERS, NUM_RNN_LAYERS).to(DEVICE)
 elif MODEL == "LSTM":
-    model = ShallowRegressionLSTM(LEN_FEATURES, HIDDEN_LAYERS, NUM_RNN_LAYERS)
+    model = ShallowRegressionLSTM(LEN_FEATURES, HIDDEN_LAYERS, NUM_RNN_LAYERS).to(DEVICE)
 elif MODEL == "FCN_LSTM":
-    model = MLSTMfcn(num_classes=1, num_features=LEN_FEATURES)
+    model = MLSTMfcn(num_classes=1, num_features=LEN_FEATURES).to(DEVICE)
 else:
     raise ValueError(f"{MODEL} not implemented")
 
-loss_function = nn.BCEWithLogitsLoss()
+loss_function = nn.BCEWithLogitsLoss().to(DEVICE)
 optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=PATIENCE, factor=PATIENCE_FACTOR)
 
 dfs = []
-for file in tqdm(os.listdir(os.path.join(BASE_DIR, "train"))):
+for file in tqdm(os.listdir(os.path.join(BASE_DIR, "train"))[:1]):
     df = create_dataset(os.path.join(BASE_DIR, "train", file), PARAMETER)
     dfs.append(df)
 
 train_dataset = SequenceDataset(dfs, mode="train", length=FEATURE_LENGTH)
 
 dfs_val = []
-for file in tqdm(os.listdir(os.path.join(BASE_DIR, "val"))):
+for file in tqdm(os.listdir(os.path.join(BASE_DIR, "val"))[:1]):
     df = create_dataset(os.path.join(BASE_DIR, "val", file), PARAMETER)
     dfs_val.append(df)
 
 val_dataset = SequenceDataset(dfs_val, mode="val", length=FEATURE_LENGTH)
 
-train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
-val_loader = DataLoader(val_dataset, batch_size=4, shuffle=True)
+train_loader = DataLoader(train_dataset, batch_size=128, shuffle=True)
+val_loader = DataLoader(val_dataset, batch_size=128, shuffle=True)
 
 v_loss, t_loss = [], []
 v_accuracy     = []
+v_precision, v_recall, v_f1 = [], [], []
 best_vloss = 10000000
 
 for epoch in tqdm(range(EPOCHS)):
@@ -88,6 +91,7 @@ for epoch in tqdm(range(EPOCHS)):
     for i, data in tqdm(enumerate(train_loader)):
         # Every data instance is an input + label pair
         inputs, labels = data
+        inputs, labels = inputs.to(DEVICE), labels.to(DEVICE)
 
         # Zero your gradients for every batch!
         optimizer.zero_grad()
@@ -97,8 +101,8 @@ for epoch in tqdm(range(EPOCHS)):
 
         # Compute the loss and its gradients
         loss = loss_function(outputs, labels)
-        running_loss += loss.item()
         loss.backward()
+        running_loss += loss.to("cpu").item()
 
         # Adjust learning weights
         optimizer.step()
@@ -114,13 +118,16 @@ for epoch in tqdm(range(EPOCHS)):
     for i, data in enumerate(val_loader):
         with torch.no_grad():
             inputs, labels = data
+            inputs, labels = inputs.to(DEVICE), labels.to(DEVICE)
             outputs = model(inputs).squeeze(-1)
             loss = loss_function(outputs, labels)
-            running_v_loss += loss.item()
+            running_v_loss += loss.to("cpu").item()
 
             outputs.sigmoid_()
             outputs[outputs < THRESHOLD] = 0.0
             outputs[outputs > THRESHOLD] = 1.0
+            labels = labels.to("cpu")
+            outputs = outputs.to("cpu")
             true_labels.extend(labels.tolist())
             preds.extend(outputs.tolist())
             total += labels.size(0)
