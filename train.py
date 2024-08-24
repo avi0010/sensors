@@ -7,14 +7,15 @@ from simple_lstm import ShallowRegressionGRU, ShallowRegressionLSTM
 from lstm_fcn import MLSTMfcn
 from dataset import SequenceDataset, create_dataset, PARAMETER
 from tqdm import tqdm
-from sklearn.metrics import precision_recall_fscore_support
+from sklearn.metrics import precision_score, accuracy_score, recall_score, f1_score
 import json
+import uuid
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 LEARNING_RATE = 0.001
 LEN_FEATURES = 26
-EPOCHS = 5
+EPOCHS = 50
 THRESHOLD = 0.5
 PATIENCE = 5
 PATIENCE_FACTOR = 0.1
@@ -22,9 +23,10 @@ MODEL_BASE_PATH = "training"
 HIDDEN_LAYERS = 2
 NUM_RNN_LAYERS = 1
 FEATURE_LENGTH = 100
+POS_WEIGHT = 5.0
 MODEL = "GRU"
 BASE_DIR = "data"
-MODEL_SAVE_PATH = os.path.join(MODEL_BASE_PATH, f"{MODEL}_{HIDDEN_LAYERS}_{NUM_RNN_LAYERS}_{FEATURE_LENGTH}")
+MODEL_SAVE_PATH = os.path.join(MODEL_BASE_PATH, f"{MODEL}_{HIDDEN_LAYERS}_{NUM_RNN_LAYERS}_{FEATURE_LENGTH}_{str(uuid.uuid4())}")
 
 if not os.path.exists(MODEL_BASE_PATH):
     os.mkdir(MODEL_BASE_PATH)
@@ -40,6 +42,7 @@ with open (os.path.join(MODEL_SAVE_PATH, "parameters.json"), 'w') as f:
        "FEATURE_LENGTH" :FEATURE_LENGTH ,
        "LEN_FEATURES" :LEN_FEATURES ,
        "MODEL" :MODEL ,
+       "POS_WEIGHT": POS_WEIGHT,
        "NUM_RNN_LAYERS" :NUM_RNN_LAYERS ,
        "PATIENCE_FACTOR" :PATIENCE_FACTOR ,
        "PATIENCE" :PATIENCE ,
@@ -57,19 +60,19 @@ elif MODEL == "FCN_LSTM":
 else:
     raise ValueError(f"{MODEL} not implemented")
 
-loss_function = nn.BCEWithLogitsLoss().to(DEVICE)
+loss_function = nn.BCEWithLogitsLoss(pos_weight=torch.tensor(POS_WEIGHT)).to(DEVICE)
 optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=PATIENCE, factor=PATIENCE_FACTOR)
 
 dfs = []
-for file in tqdm(os.listdir(os.path.join(BASE_DIR, "train"))[:1]):
+for file in tqdm(os.listdir(os.path.join(BASE_DIR, "train"))):
     df = create_dataset(os.path.join(BASE_DIR, "train", file), PARAMETER)
     dfs.append(df)
 
 train_dataset = SequenceDataset(dfs, mode="train", length=FEATURE_LENGTH)
 
 dfs_val = []
-for file in tqdm(os.listdir(os.path.join(BASE_DIR, "val"))[:1]):
+for file in tqdm(os.listdir(os.path.join(BASE_DIR, "val"))):
     df = create_dataset(os.path.join(BASE_DIR, "val", file), PARAMETER)
     dfs_val.append(df)
 
@@ -130,13 +133,14 @@ for epoch in tqdm(range(EPOCHS)):
             outputs = outputs.to("cpu")
             true_labels.extend(labels.tolist())
             preds.extend(outputs.tolist())
-            total += labels.size(0)
-            correct += (outputs == labels).sum().item()
+            # total += labels.size(0)
+            # correct += (outputs == labels).sum().item()
 
-    precision, recall, f1, _ = precision_recall_fscore_support(true_labels, preds)
-    v_precision.extend(precision.tolist())
-    v_recall.extend(recall.tolist())
-    v_f1.extend(f1.tolist())
+    precision, recall, f1 = precision_score(true_labels, preds), recall_score(true_labels, preds), f1_score(true_labels, preds)
+    accuracy = accuracy_score(true_labels, preds)
+    v_precision.append(precision)
+    v_recall.append(recall)
+    v_f1.append(f1)
     avg_vloss = running_v_loss / len(val_loader)
     if avg_vloss < best_vloss:
         best_vloss = avg_vloss
@@ -144,7 +148,7 @@ for epoch in tqdm(range(EPOCHS)):
         torch.save(model, model_path)
 
     v_loss.append(avg_vloss)
-    v_accuracy.append(correct / total)
+    v_accuracy.append(accuracy)
 
 xs = [x for x in range(EPOCHS)]
 
