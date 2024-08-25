@@ -7,6 +7,7 @@ import numpy as np
 import os
 import joblib
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
+from scipy.signal import savgol_filter
 
 torch.manual_seed(42)
 SENSORS = ["S0", "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10", "S11", "S12", "S13", "S14", "S15", "S16", "S17", "S18", "S19", "S20", "S21", "S22", "S23", "Temperature", "Humidity", ]
@@ -39,6 +40,7 @@ class SequenceDataset(Dataset):
             # fig.show()
             X, y = df.drop(columns=['Exposure']).to_numpy(), df.Exposure.values
             X_ss, y_mm = split_sequences(X, y, length)
+            X_ss = savgol_filter(X_ss, length, 3, axis=1)
             self.train_x.extend(X_ss)
             self.train_y.extend(y_mm)
 

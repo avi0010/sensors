@@ -14,15 +14,21 @@ class ShallowRegressionLSTM(nn.Module):
             input_size=num_sensors,
             hidden_size=hidden_units,
             batch_first=True,
-            dropout=0.5,
             num_layers=self.num_layers
         )
 
-        self.fc_1 = nn.Linear(in_features=self.hidden_units, out_features=1)
+        self.fc_1 = nn.Linear(in_features=self.hidden_units, out_features=128)
+        self.fc_2 = nn.Linear(128, 64) # fully connected last layer
+        self.fc_3 = nn.Linear(64, 1) # fully connected last layer
 
     def forward(self, x):
         _, (hn, _) = self.lstm(x)
-        out = self.fc_1(self.elu(hn[-1]))
+        out = self.fc_1(hn[-1])
+        out = self.elu(out)
+        out = self.fc_2(out) # first dense
+        out = self.elu(out) # relu
+        out = self.fc_3(out) # final output
+        out = self.elu(out) # relu
         return out
 
 
@@ -32,13 +38,12 @@ class ShallowRegressionGRU(nn.Module):
         self.num_sensors = num_sensors  # this is the number of features
         self.hidden_units = hidden_units
         self.num_layers = num_layers
-        self.elu = nn.ELU()
+        self.elu = nn.ReLU()
 
         self.gru = nn.GRU(
             input_size=num_sensors,
             hidden_size=hidden_units,
             batch_first=True,
-            dropout=0.0,
             num_layers=self.num_layers
         )
 
