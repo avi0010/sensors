@@ -23,7 +23,7 @@ MODEL_BASE_PATH = "training"
 HIDDEN_LAYERS = 2
 NUM_RNN_LAYERS = 1
 FEATURE_LENGTH = 100
-POS_WEIGHT = 5.0
+POS_WEIGHT = 2.5
 MODEL = "GRU"
 BASE_DIR = "data"
 MODEL_SAVE_PATH = os.path.join(MODEL_BASE_PATH, f"{MODEL}_{HIDDEN_LAYERS}_{NUM_RNN_LAYERS}_{FEATURE_LENGTH}_{str(uuid.uuid4())}")
@@ -62,7 +62,7 @@ else:
 
 loss_function = nn.BCEWithLogitsLoss(pos_weight=torch.tensor(POS_WEIGHT)).to(DEVICE)
 optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
-scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=PATIENCE, factor=PATIENCE_FACTOR)
+scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.9)
 
 dfs = []
 for file in tqdm(os.listdir(os.path.join(BASE_DIR, "train"))):
@@ -149,6 +149,7 @@ for epoch in tqdm(range(EPOCHS)):
 
     v_loss.append(avg_vloss)
     v_accuracy.append(accuracy)
+    scheduler.step()
 
 xs = [x for x in range(EPOCHS)]
 
