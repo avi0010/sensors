@@ -46,7 +46,7 @@ class StockBlockLayer(nn.Module):
     def spe_seq_cell(self, input):
         batch_size, k, input_channel, node_cnt, time_step = input.size()
         input = input.view(batch_size, -1, node_cnt, time_step)
-        ffted  = torch.view_as_real(torch.fft.rfft(input, dim=1))
+        ffted = torch.view_as_real(torch.fft.fft(input, dim=1))
         real = ffted[..., 0].permute(0, 2, 1, 3).contiguous().reshape(batch_size, node_cnt, -1)
         img = ffted[..., 1].permute(0, 2, 1, 3).contiguous().reshape(batch_size, node_cnt, -1)
         for i in range(3):
@@ -75,10 +75,10 @@ class StockBlockLayer(nn.Module):
         return forecast, backcast_source
 
 
-class Model(nn.Module):
+class graph_model(nn.Module):
     def __init__(self, units, stack_cnt, time_step, multi_layer, horizon=1, dropout_rate=0.5, leaky_rate=0.2,
                  device='cpu'):
-        super(Model, self).__init__()
+        super(graph_model, self).__init__()
         self.unit = units
         self.stack_cnt = stack_cnt
         self.unit = units
@@ -95,12 +95,17 @@ class Model(nn.Module):
         self.stock_block.extend(
             [StockBlockLayer(self.time_step, self.unit, self.multi_layer, stack_cnt=i) for i in range(self.stack_cnt)])
         self.fc = nn.Sequential(
-            nn.Linear(int(self.time_step * units), int(self.time_step)),
+            nn.Linear(int(self.time_step), int(self.time_step)),
             nn.LeakyReLU(),
             nn.Linear(int(self.time_step), self.horizon),
         )
         self.leakyrelu = nn.LeakyReLU(self.alpha)
         self.dropout = nn.Dropout(p=dropout_rate)
+        self.fc_1 = nn.Sequential(
+            nn.Linear(26, 32),
+            nn.ReLU(),
+            nn.Linear(32, 1)
+        )
         self.to(device)
 
     def get_laplacian(self, graph, normalize):
@@ -172,13 +177,12 @@ class Model(nn.Module):
             forecast, X = self.stock_block[stack_i](X, mul_L)
             result.append(forecast)
         forecast = result[0] + result[1]
-        forecast = forecast.flatten(1)
         forecast = self.fc(forecast)
-        return forecast[0], attention
+        forecast = self.fc_1(forecast.squeeze(-1))
+        return forecast
 
 if __name__ == '__main__':
-    model = Model(26, 2, 100, 1)
-    input = torch.randn(1, 100, 26)
+    model = graph_model(26, 2, 100, 1)
+    input = torch.randn(5, 100, 26)
     with torch.no_grad():
-        forcast, _ = model(input)
-        print(forcast)
+        forcast = model(input)

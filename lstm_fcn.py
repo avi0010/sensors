@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+from thop import profile, clever_format
 
 class SELayer(nn.Module):
     def __init__(self, channel, reduction=16):
@@ -19,8 +20,8 @@ class SELayer(nn.Module):
 
 class MLSTMfcn(nn.Module):
     def __init__(self, num_classes, num_features,
-                 num_lstm_out=128, num_lstm_layers=1, 
-                 conv1_nf=128, conv2_nf=256, conv3_nf=128,
+                 num_lstm_out=16, num_lstm_layers=1, 
+                 conv1_nf=16, conv2_nf=32, conv3_nf=16,
                  lstm_drop_p=0.5, fc_drop_p=0.3):
         super(MLSTMfcn, self).__init__()
 
@@ -83,7 +84,7 @@ class MLSTMfcn(nn.Module):
 if __name__ == '__main__':
     model = MLSTMfcn(num_classes=1, num_features=26)
     print(model)
-    input = torch.randn(8, 100, 26)
-    with torch.no_grad():
-        out = model(input)
-        print(out)
+    rand = torch.randn(1, 100, 26)
+    macs, params = profile(model, inputs=(rand, ))
+    macs, params = clever_format([macs, params], "%.3f")
+    print(f"macs: {macs}, params:{params}")
