@@ -5,7 +5,8 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from simple_lstm import ShallowRegressionGRU, ShallowRegressionLSTM
 from lstm_fcn import MLSTMfcn
-from dataset import SequenceDataset, create_dataset, PARAMETER
+from graph import graph_model 
+from dataset import SequenceDataset, PARAMETER, LENGTH
 from tqdm import tqdm
 from sklearn.metrics import precision_score, accuracy_score, recall_score, f1_score
 import json
@@ -57,6 +58,8 @@ elif MODEL == "LSTM":
     model = ShallowRegressionLSTM(LEN_FEATURES, HIDDEN_LAYERS, NUM_RNN_LAYERS).to(DEVICE)
 elif MODEL == "FCN_LSTM":
     model = MLSTMfcn(num_classes=1, num_features=LEN_FEATURES).to(DEVICE)
+elif MODEL == "graph":
+    model = graph_model(LEN_FEATURES, 2, LENGTH, 1)
 else:
     raise ValueError(f"{MODEL} not implemented")
 
@@ -64,22 +67,12 @@ loss_function = nn.BCEWithLogitsLoss(pos_weight=torch.tensor(POS_WEIGHT)).to(DEV
 optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
 scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.9)
 
-dfs = []
-for file in tqdm(os.listdir(os.path.join(BASE_DIR, "train"))):
-    df = create_dataset(os.path.join(BASE_DIR, "train", file), PARAMETER)
-    dfs.append(df)
+train_dataset = SequenceDataset("./data_filtered/train/")
 
-train_dataset = SequenceDataset(dfs, mode="train", length=FEATURE_LENGTH)
+val_dataset = SequenceDataset("./data_filtered/val/")
 
-dfs_val = []
-for file in tqdm(os.listdir(os.path.join(BASE_DIR, "val"))):
-    df = create_dataset(os.path.join(BASE_DIR, "val", file), PARAMETER)
-    dfs_val.append(df)
-
-val_dataset = SequenceDataset(dfs_val, mode="val", length=FEATURE_LENGTH)
-
-train_loader = DataLoader(train_dataset, batch_size=128, shuffle=True)
-val_loader = DataLoader(val_dataset, batch_size=128, shuffle=True)
+train_loader = DataLoader(train_dataset, batch_size=4096, shuffle=True)
+val_loader = DataLoader(val_dataset, batch_size=4096, shuffle=True)
 
 v_loss, t_loss = [], []
 v_accuracy     = []
@@ -129,12 +122,10 @@ for epoch in tqdm(range(EPOCHS)):
             outputs.sigmoid_()
             outputs[outputs < THRESHOLD] = 0.0
             outputs[outputs > THRESHOLD] = 1.0
-            labels = labels.to("cpu")
-            outputs = outputs.to("cpu")
+            labels = labels.to("cpu", dtype=torch.uint8)
+            outputs = outputs.to("cpu", dtype=torch.uint8)
             true_labels.extend(labels.tolist())
             preds.extend(outputs.tolist())
-            # total += labels.size(0)
-            # correct += (outputs == labels).sum().item()
 
     precision, recall, f1 = precision_score(true_labels, preds), recall_score(true_labels, preds), f1_score(true_labels, preds)
     accuracy = accuracy_score(true_labels, preds)
