@@ -8,6 +8,7 @@ from lstm_fcn import MLSTMfcn
 from graph import graph_model 
 from dataset import SequenceDataset, PARAMETER, LENGTH
 from tqdm import tqdm
+from trans import TimeSeriesTransformer
 from sklearn.metrics import precision_score, accuracy_score, recall_score, f1_score
 import json
 import uuid
@@ -62,6 +63,8 @@ elif MODEL == "FCN_LSTM":
     model = MLSTMfcn(num_classes=1, num_features=LEN_FEATURES).to(DEVICE)
 elif MODEL == "graph":
     model = graph_model(LEN_FEATURES, 2, LENGTH, 1).to(DEVICE)
+elif MODEL == "trans":
+    model = TimeSeriesTransformer(input_dim=LEN_FEATURES, n_heads=2, hidden=HIDDEN_LAYERS, num_layers=NUM_RNN_LAYERS).to(DEVICE)
 else:
     raise ValueError(f"{MODEL} not implemented")
 
@@ -79,6 +82,7 @@ val_loader = DataLoader(val_dataset, batch_size=4096, shuffle=True)
 v_loss, t_loss = [], []
 v_accuracy     = []
 v_precision, v_recall, v_f1 = [], [], []
+t_precision, t_recall, t_f1 = [], [], []
 best_vloss = 10000000
 
 for epoch in tqdm(range(EPOCHS)):
@@ -86,6 +90,7 @@ for epoch in tqdm(range(EPOCHS)):
 
     model.train()
 
+    true_labels, preds = [], []
     for i, data in tqdm(enumerate(train_loader)):
         # Every data instance is an input + label pair
         inputs, labels = data
@@ -105,8 +110,21 @@ for epoch in tqdm(range(EPOCHS)):
         # Adjust learning weights
         optimizer.step()
 
+        outputs.sigmoid_()
+        outputs[outputs < THRESHOLD] = 0.0
+        outputs[outputs > THRESHOLD] = 1.0
+        labels = labels.detach().to("cpu", dtype=torch.uint8)
+        outputs = outputs.detach().to("cpu", dtype=torch.uint8)
+        true_labels.extend(labels.tolist())
+        preds.extend(outputs.tolist())
+
         # Gather data and report
     t_loss.append(running_loss / len(train_loader))
+    precision, recall, f1 = precision_score(true_labels, preds), recall_score(true_labels, preds), f1_score(true_labels, preds)
+    accuracy = accuracy_score(true_labels, preds)
+    t_precision.append(precision)
+    t_recall.append(recall)
+    t_f1.append(f1)
 
     model.eval()
 
@@ -161,9 +179,12 @@ ax[1].set_ylabel("acc")
 ax[1].legend()
 ax[1].set_title("Model acc")
 
-ax[2].plot(xs, v_precision, label="precision")
-ax[2].plot(xs, v_recall, label="recall")
-ax[2].plot(xs, v_f1, label="f1")
+ax[2].plot(xs, v_precision, label="v_precision")
+ax[2].plot(xs, v_recall, label="v_recall")
+ax[2].plot(xs, v_f1, label="v_f1")
+ax[2].plot(xs, t_precision, label="t_precision")
+ax[2].plot(xs, t_recall, label="t_recall")
+ax[2].plot(xs, t_f1, label="t_f1")
 ax[2].set_xlabel("epoch")
 ax[2].set_ylabel("stats")
 ax[2].legend()
