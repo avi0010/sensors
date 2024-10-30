@@ -1,20 +1,11 @@
 import os
-from create import SAVE_DIR
+from create import SAVE_DIR, PARAMETER, SENSORS, INPUTS
 import numpy as np
 import pandas as pd
 from tqdm.contrib.concurrent import process_map
 from sklearn.preprocessing import StandardScaler
 import joblib
 
-SHEETS = ["S0", "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10", "S11", "S12", "S13", "S14", "S15", "S16", "S17", "S18", "S19", "S20", "S21", "S22", "S23", "GasResist"]
-ENVIRONMENT = ["Temperature", "Humidity"]
-OUTPUTS = ["Exposure"]
-
-INPUTS = SHEETS + ENVIRONMENT
-SENSORS = INPUTS + OUTPUTS
-
-PARAMETER = "Derivative"
-WARMUP = 800
 STEP_SIZE = 2
 POSITIVE_LABEL_TIME = 256
 MM_FILE_NAME = f"scaler_{PARAMETER}.gz"
