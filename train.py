@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader
 from simple_lstm import ShallowRegressionGRU, ShallowRegressionLSTM
 from lstm_fcn import MLSTMfcn
 from graph import graph_model 
-from dataset import SequenceDataset, PARAMETER, LENGTH
+from dataset import INPUTS, SequenceDataset, PARAMETER, LENGTH
 from tqdm import tqdm
 from trans import TimeSeriesTransformer
 from sklearn.metrics import precision_score, accuracy_score, recall_score, f1_score
@@ -15,21 +15,23 @@ import uuid
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
-LEARNING_RATE = 0.001
-LEN_FEATURES = 26
-EPOCHS = 50
+LEARNING_RATE = 0.0001
+LEN_FEATURES = len(INPUTS)
+EPOCHS = 100
 THRESHOLD = 0.5
 PATIENCE = 5
 PATIENCE_FACTOR = 0.1
 MODEL_BASE_PATH = "training"
-HIDDEN_LAYERS = 2
+HIDDEN_LAYERS = 32
 NUM_RNN_LAYERS = 1
-FEATURE_LENGTH = 100
-POS_WEIGHT = 2.5
-MODEL = "GRU"
+FEATURE_LENGTH = LENGTH
+POS_WEIGHT = 2
+HEADS = 2
+MODEL = "trans"
 BASE_DIR = "data"
-GAMMA = 0.9
+GAMMA = 0.975
 MODEL_SAVE_PATH = os.path.join(MODEL_BASE_PATH, f"{MODEL}_{HIDDEN_LAYERS}_{NUM_RNN_LAYERS}_{FEATURE_LENGTH}_{str(uuid.uuid4())}")
+print(MODEL_SAVE_PATH)
 
 if not os.path.exists(MODEL_BASE_PATH):
     os.mkdir(MODEL_BASE_PATH)
@@ -52,7 +54,9 @@ with open (os.path.join(MODEL_SAVE_PATH, "parameters.json"), 'w') as f:
        "PATIENCE" :PATIENCE ,
        "THRESHOLD" :THRESHOLD ,
        "EPOCHS" :EPOCHS ,
+       "HEADS" :HEADS ,
    }
+   print(data)
    json.dump(data, f, indent=4)
 
 if MODEL == "GRU":
