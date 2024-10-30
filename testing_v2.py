@@ -55,8 +55,8 @@ for dic in ["train"]:
 
             res_dic = {"label": true, "predictions": pred}
             res_df = pd.DataFrame(res_dic)
-            fig = res_df.plot()
-            fig.show()
+            # fig = res_df.plot()
+            # fig.show()
 
-            # with pd.ExcelWriter(os.path.join(BASE_DIR, dic, file), mode='a') as writer:  
-            #     res_df.to_excel(writer, sheet_name=mod)
+            with pd.ExcelWriter(os.path.join(BASE_DIR, dic, file), mode='a') as writer:  
+                res_df.to_excel(writer, sheet_name=mod)
