@@ -7,7 +7,6 @@ from sklearn.preprocessing import StandardScaler
 import joblib
 
 STEP_SIZE = 2
-POSITIVE_LABEL_TIME = 256
 MM_FILE_NAME = f"scaler_{PARAMETER}.gz"
 LENGTH = 100
 
@@ -46,7 +45,6 @@ if __name__ == '__main__':
         dfs.append(df)
 
     dd = pd.concat(dfs)
-    dd.replace(-999, 0, inplace=True)
     MM = StandardScaler()
     MM.fit(dd[INPUTS])
     joblib.dump(MM, MM_FILE_NAME)

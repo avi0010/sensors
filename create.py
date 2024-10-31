@@ -34,14 +34,15 @@ def create_dataset(filename: str):
         # Extract the relevant column and assign it to the main DataFrame
         df[sheet_name] = filtered_df[PARAMETER]
     
-    if not os.path.exists(SAVE_DIR):
-        os.mkdir(SAVE_DIR)
+    df.replace(-999, 0, inplace=True)
 
     df.to_excel(os.path.join(SAVE_DIR, filename.split("/")[-1]), index=False) 
     return
 
 
 if __name__ == '__main__':
+    os.mkdir(SAVE_DIR)
+
     # Train
     input_files = []
     training_dir = "data/train/"
