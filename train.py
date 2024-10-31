@@ -6,7 +6,9 @@ from torch.utils.data import DataLoader
 from simple_lstm import ShallowRegressionGRU, ShallowRegressionLSTM
 from lstm_fcn import MLSTMfcn
 from graph import graph_model 
-from dataset import INPUTS, SequenceDataset, PARAMETER, LENGTH
+from dataset import SequenceDataset
+from dataset_v2 import LENGTH
+from create import INPUTS, PARAMETER
 from tqdm import tqdm
 from trans import TimeSeriesTransformer
 from sklearn.metrics import precision_score, accuracy_score, recall_score, f1_score
@@ -80,8 +82,8 @@ train_dataset = SequenceDataset("./data_filtered/train/")
 
 val_dataset = SequenceDataset("./data_filtered/val/")
 
-train_loader = DataLoader(train_dataset, batch_size=4096, shuffle=True)
-val_loader = DataLoader(val_dataset, batch_size=4096, shuffle=True)
+train_loader = DataLoader(train_dataset, batch_size=16384, shuffle=True, num_workers=2)
+val_loader = DataLoader(val_dataset, batch_size=16384, shuffle=True, num_workers=2)
 
 v_loss, t_loss = [], []
 v_accuracy     = []

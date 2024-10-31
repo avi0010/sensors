@@ -8,12 +8,11 @@ import os
 from tqdm import tqdm
 import joblib
 
-from dataset import LENGTH, MM_FILE_NAME, INPUTS, SENSORS
+from create import SENSORS
+from dataset_v2 import LENGTH
 
 BASE_DIR = "./data/"
 MM = joblib.load("/home/aveekal/Downloads/scaler_Derivative.gz")
-
-temp = ['S0', 'S1', 'S2', 'S3', 'S4', 'S5', 'S6', 'S7', 'S8', 'S9', 'S10', 'S11', 'S12', 'S13', 'S14', 'S15', 'S16', 'S17', 'S18', 'S19', 'S20', 'S21', 'S22', 'S23', 'Temperature', 'Humidity', 'GasResist', 'Exposure']
 
 model = {
     "Model1": "/home/aveekal/Downloads/training/trans_32_1_100_c3d51809-da5b-4b9d-a710-23d99ef33726/47_0.1224.pth"
@@ -25,7 +24,7 @@ for dic in ["train"]:
 
         for mod, path in model.items():
             df = pd.read_excel(os.path.join(SAVE_DIR, file))
-            df = df[temp]
+            df = df[SENSORS]
 
             data = []
 

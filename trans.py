@@ -32,7 +32,7 @@ class PositionalEncoding(nn.Module):
         return self.dropout(x)
 
 class TimeSeriesTransformer(nn.Module):
-    def __init__(self, input_dim, n_heads, hidden, num_layers, transformer_dim=32):
+    def __init__(self, input_dim, n_heads, hidden, num_layers, transformer_dim=16):
         super(TimeSeriesTransformer, self).__init__()
 
         self.positional_encoding = PositionalEncoding(d_model=transformer_dim, max_len=100)
