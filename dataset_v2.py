@@ -24,6 +24,7 @@ def save_dataset(file_path: str):
 
     data_file = os.path.join(SAVE_DIR, file_name)
     df = pd.read_excel(data_file, usecols=SENSORS)
+    df = df.iloc[800:]
 
     for idx, window in enumerate(df.rolling(window=LENGTH, step=STEP_SIZE)):
         if len(window) < LENGTH: continue

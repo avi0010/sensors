@@ -39,7 +39,7 @@ for dic in ["train"]:
             X_data, y_data = zip(*data)
             # Create a TensorDataset
             dataset = TensorDataset(torch.stack(X_data), torch.stack(y_data))
-            dataloader = DataLoader(dataset, batch_size=256, shuffle=False, num_workers=4)
+            dataloader = DataLoader(dataset, batch_size=16384, shuffle=False, num_workers=4)
 
             MODEL = torch.load(path, map_location="cpu")
             MODEL.eval()

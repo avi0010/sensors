@@ -19,20 +19,20 @@ def create_dataset(filename: str):
     df = pd.DataFrame()
 
     # Load and process the S0 sheet separately for initial exposure, temperature, and humidity
-    S0_db = pd.read_excel(filename, sheet_name="S0")
+    S0_db = pd.read_excel(filename, sheet_name="S0", usecols=ENVIRONMENT + OUTPUTS)
     S0_db = S0_db.infer_objects()
-    S0_filtered = S0_db[S0_db["Routine Counter"] >= WARMUP]
-    df = S0_filtered[ENVIRONMENT + OUTPUTS].join(df)
+    # S0_filtered = S0_db[S0_db["Routine Counter"] >= WARMUP]
+    S0_db = S0_db[ENVIRONMENT + OUTPUTS].join(df)
 
     for sheet_name in SHEETS:  # Adjust the range if the number of sheets is different
-        sheet_df = pd.read_excel(filename, sheet_name=sheet_name)
+        sheet_df = pd.read_excel(filename, sheet_name=sheet_name, usecols=PARAMETER)
         # Extract the relevant column and assign it to the main DataFrame
 
         sheet_df = sheet_df.infer_objects()
 
-        filtered_df = sheet_df[sheet_df["Routine Counter"] >= WARMUP]
+        # filtered_df = sheet_df[sheet_df["Routine Counter"] >= WARMUP]
         # Extract the relevant column and assign it to the main DataFrame
-        df[sheet_name] = filtered_df[PARAMETER]
+        df[sheet_name] = sheet_df[PARAMETER]
     
     df.replace(-999, 0, inplace=True)
 
