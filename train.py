@@ -17,7 +17,7 @@ import uuid
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
-LEARNING_RATE = 0.0001
+LEARNING_RATE = 0.0003
 LEN_FEATURES = len(INPUTS)
 EPOCHS = 100
 THRESHOLD = 0.5
@@ -27,11 +27,11 @@ MODEL_BASE_PATH = "training"
 HIDDEN_LAYERS = 32
 NUM_RNN_LAYERS = 1
 FEATURE_LENGTH = LENGTH
-POS_WEIGHT = 2
-HEADS = 2
+POS_WEIGHT = 3
+HEADS = 4
 MODEL = "trans"
 BASE_DIR = "data"
-GAMMA = 0.975
+GAMMA = 0.95
 MODEL_SAVE_PATH = os.path.join(MODEL_BASE_PATH, f"{MODEL}_{HIDDEN_LAYERS}_{NUM_RNN_LAYERS}_{FEATURE_LENGTH}_{str(uuid.uuid4())}")
 print(MODEL_SAVE_PATH)
 
@@ -70,7 +70,7 @@ elif MODEL == "FCN_LSTM":
 elif MODEL == "graph":
     model = graph_model(LEN_FEATURES, 2, LENGTH, 1).to(DEVICE)
 elif MODEL == "trans":
-    model = TimeSeriesTransformer(input_dim=LEN_FEATURES, n_heads=2, hidden=HIDDEN_LAYERS, num_layers=NUM_RNN_LAYERS).to(DEVICE)
+    model = TimeSeriesTransformer(input_dim=LEN_FEATURES, n_heads=HEADS, hidden=HIDDEN_LAYERS, num_layers=NUM_RNN_LAYERS).to(DEVICE)
 else:
     raise ValueError(f"{MODEL} not implemented")
 
@@ -82,8 +82,8 @@ train_dataset = SequenceDataset("./data_filtered/train/")
 
 val_dataset = SequenceDataset("./data_filtered/val/")
 
-train_loader = DataLoader(train_dataset, batch_size=16384, shuffle=True, num_workers=2)
-val_loader = DataLoader(val_dataset, batch_size=16384, shuffle=True, num_workers=2)
+train_loader = DataLoader(train_dataset, batch_size=16384, shuffle=True, num_workers=4)
+val_loader = DataLoader(val_dataset, batch_size=16384, shuffle=True, num_workers=4)
 
 v_loss, t_loss = [], []
 v_accuracy     = []
@@ -161,8 +161,8 @@ for epoch in tqdm(range(EPOCHS)):
     avg_vloss = running_v_loss / len(val_loader)
     if avg_vloss < best_vloss:
         best_vloss = avg_vloss
-        model_path = os.path.join(MODEL_SAVE_PATH, f"{epoch + 1}_{round(avg_vloss, 4)}.pth")
-        torch.save(model, model_path)
+    model_path = os.path.join(MODEL_SAVE_PATH, f"{epoch + 1}_{round(avg_vloss, 4)}.pth")
+    torch.save(model, model_path)
 
     v_loss.append(avg_vloss)
     v_accuracy.append(accuracy)

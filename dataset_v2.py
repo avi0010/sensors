@@ -3,10 +3,10 @@ from create import SAVE_DIR, PARAMETER, SENSORS, INPUTS
 import numpy as np
 import pandas as pd
 from tqdm.contrib.concurrent import process_map
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler
 import joblib
 
-STEP_SIZE = 2
+STEP_SIZE = 5
 MM_FILE_NAME = f"scaler_{PARAMETER}.gz"
 LENGTH = 100
 
@@ -23,10 +23,16 @@ def save_dataset(file_path: str):
     os.mkdir(y_dir)
 
     data_file = os.path.join(SAVE_DIR, file_name)
-    df = pd.read_excel(data_file, usecols=SENSORS)
-    df = df.iloc[800:]
+    df = pd.read_excel(data_file)
+    #df = df.iloc[800:]
+    if df['Exposure'].sum() > 0:
+        step_size = 1
+    elif "outdoor" in file_path.lower():
+        step_size = 1
+    else:
+        step_size = 10
 
-    for idx, window in enumerate(df.rolling(window=LENGTH, step=STEP_SIZE)):
+    for idx, window in enumerate(df.rolling(window=LENGTH, step=step_size)):
         if len(window) < LENGTH: continue
 
         X, y = window.drop(columns=['Exposure']), window.Exposure.values[-1]
@@ -42,7 +48,7 @@ if __name__ == '__main__':
 
     dfs = []
     for file in os.listdir(os.path.join(data_dir, "train")):
-        df = pd.read_excel(os.path.join(SAVE_DIR, file), usecols=SENSORS)
+        df = pd.read_excel(os.path.join(SAVE_DIR, file))
         dfs.append(df)
 
     dd = pd.concat(dfs)

@@ -9,34 +9,42 @@ OUTPUTS = ["Exposure"]
 INPUTS = SHEETS + ENVIRONMENT
 SENSORS = INPUTS + OUTPUTS
 
-PARAMETER = "Theta 1"
+PARAMETER = "feature"
 WARMUP = 800
 
 SAVE_DIR = "data_generated"
 
 def create_dataset(filename: str):
-    # Initialize the DataFrame with exposure, temperature, and humidity columns
-    df = pd.DataFrame()
+    try:
+        # Initialize the DataFrame with exposure, temperature, and humidity columns
+        df = pd.DataFrame()
 
-    # Load and process the S0 sheet separately for initial exposure, temperature, and humidity
-    S0_db = pd.read_excel(filename, sheet_name="S0", usecols=ENVIRONMENT + OUTPUTS)
-    S0_db = S0_db.infer_objects()
-    # S0_filtered = S0_db[S0_db["Routine Counter"] >= WARMUP]
-    S0_db = S0_db[ENVIRONMENT + OUTPUTS].join(df)
+        # Load and process the S0 sheet separately for initial exposure, temperature, and humidity
+        S0_db = pd.read_excel(filename, sheet_name="S0")
+        S0_db = S0_db.infer_objects()
+        S0_filtered = S0_db[S0_db["Routine Counter"] >= WARMUP]
+        df = S0_db[ENVIRONMENT + OUTPUTS].join(df)
 
-    for sheet_name in SHEETS:  # Adjust the range if the number of sheets is different
-        sheet_df = pd.read_excel(filename, sheet_name=sheet_name, usecols=PARAMETER)
-        # Extract the relevant column and assign it to the main DataFrame
+        for sheet_name in SHEETS:  # Adjust the range if the number of sheets is different
+            sheet_df = pd.read_excel(filename, sheet_name=sheet_name)
+            # Extract the relevant column and assign it to the main DataFrame
 
-        sheet_df = sheet_df.infer_objects()
+            sheet_df = sheet_df.infer_objects()
 
-        # filtered_df = sheet_df[sheet_df["Routine Counter"] >= WARMUP]
-        # Extract the relevant column and assign it to the main DataFrame
-        df[sheet_name] = sheet_df[PARAMETER]
+            #if sheet_name != "BME":
+            #    sheet_df[PARAMETER] = 20000 * sheet_df["Raw Deriv."] - sheet_df["Temperature Deriv."] - sheet_df["Humidity Deriv."]
+            #else:
+            sheet_df[PARAMETER] = sheet_df["Raw Deriv."]
+
+            filtered_df = sheet_df[sheet_df["Routine Counter"] >= WARMUP]
+            # Extract the relevant column and assign it to the main DataFrame
+            df[sheet_name] = sheet_df[PARAMETER]
     
-    df.replace(-999, 0, inplace=True)
+        df.replace(-999, 0, inplace=True)
 
-    df.to_excel(os.path.join(SAVE_DIR, filename.split("/")[-1]), index=False) 
+        df.to_excel(os.path.join(SAVE_DIR, filename.split("/")[-1]), index=False) 
+    except Exception as e:
+        print(f"{filename}: {e}")
     return
 
 
