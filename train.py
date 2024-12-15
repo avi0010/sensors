@@ -5,6 +5,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from simple_lstm import ShallowRegressionGRU, ShallowRegressionLSTM
 from lstm_fcn import MLSTMfcn
+from conv_attn import Conv_Attn
 from graph import graph_model 
 from dataset import SequenceDataset
 from dataset_v2 import LENGTH
@@ -71,6 +72,8 @@ elif MODEL == "graph":
     model = graph_model(LEN_FEATURES, 2, LENGTH, 1).to(DEVICE)
 elif MODEL == "trans":
     model = TimeSeriesTransformer(input_dim=LEN_FEATURES, n_heads=HEADS, hidden=HIDDEN_LAYERS, num_layers=NUM_RNN_LAYERS).to(DEVICE)
+elif MODEL == "conv_attn":
+    model = Conv_Attn(input_dim=LEN_FEATURES, n_heads=HEADS, hidden=HIDDEN_LAYERS, num_layers=NUM_RNN_LAYERS).to(DEVICE)
 else:
     raise ValueError(f"{MODEL} not implemented")
 
