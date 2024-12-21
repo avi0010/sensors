@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import math
+from dataset_v2 import LENGTH
 
 class LearnablePositionalEncoding(nn.Module):
 
@@ -74,9 +75,29 @@ class TimeSeriesTransformer(nn.Module):
         x = self.fc(x)  # Shape: (batch_size, num_classes)
         return x
 
+class TimeSeriesTransformerExpanded(nn.Module):
+    def __init__(self, input_dim, n_heads, hidden, num_layers, transformer_dim=16):
+        super(TimeSeriesTransformerExpanded, self).__init__()
+
+        self.positional_encoding = LearnablePositionalEncoding(d_model=transformer_dim, max_len=100)
+        self.encoder = nn.TransformerEncoder(
+            nn.TransformerEncoderLayer(d_model=transformer_dim, nhead=n_heads, dim_feedforward=hidden, batch_first=True),
+            num_layers=num_layers
+        )
+        self.fc = nn.Linear(transformer_dim * LENGTH , 1)
+        self.transformation = nn.Linear(input_dim, transformer_dim)
+        self.gelu = nn.GELU()
+
+    def forward(self, x):
+        x = self.gelu(self.transformation(x))
+        x = self.positional_encoding(x)  # Add positional encoding
+        x = self.encoder(x)  # Shape: (batch_size, seq_len, input_dim)
+        x = x.reshape(x.shape[0], -1)
+        x = self.fc(x)  # Shape: (batch_size, num_classes)
+        return x
 if __name__ == '__main__':
-    model = TimeSeriesTransformer(27, 2, 32, 1)
-    input = torch.randn(102, 100, 27)
+    model = TimeSeriesTransformerExpanded(27, 2, 32, 1)
+    input = torch.randn(64, 100, 27)
     with torch.no_grad():
         forcast = model(input)
         print(forcast.shape)

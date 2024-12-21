@@ -12,7 +12,7 @@ from dataset import SequenceDataset
 from dataset_v2 import LENGTH
 from create import INPUTS, PARAMETER
 from tqdm import tqdm
-from trans import TimeSeriesTransformer
+from trans import TimeSeriesTransformer, TimeSeriesTransformerExpanded
 from sklearn.metrics import precision_score, accuracy_score, recall_score, f1_score
 import json
 import uuid
@@ -73,6 +73,8 @@ elif MODEL == "graph":
     model = graph_model(LEN_FEATURES, 2, LENGTH, 1).to(DEVICE)
 elif MODEL == "trans":
     model = TimeSeriesTransformer(input_dim=LEN_FEATURES, n_heads=HEADS, hidden=HIDDEN_LAYERS, num_layers=NUM_RNN_LAYERS).to(DEVICE)
+elif MODEL == "trans_exp":
+    model = TimeSeriesTransformerExpanded(input_dim=LEN_FEATURES, n_heads=HEADS, hidden=HIDDEN_LAYERS, num_layers=NUM_RNN_LAYERS).to(DEVICE)
 elif MODEL == "conv_attn":
     model = Conv_Attn(input_dim=LEN_FEATURES, n_heads=HEADS, hidden=HIDDEN_LAYERS, num_layers=NUM_RNN_LAYERS).to(DEVICE)
 elif MODEL == "conv_attn_Mean":
